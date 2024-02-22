@@ -1,0 +1,96 @@
+- hosts: localhost
+  connection: local  
+  tasks:
+    - name: Check if Java is installed
+      command: java -version
+      ignore_errors: true
+      register: java_check
+
+    - name: Install Java if not already installed
+      package:
+        name: openjdk-17-jdk
+        state: present
+      when: java_check.rc != 0
+
+    - name: Check if Jenkins is installed
+      command: brew list jenkins
+      register: jenkins_installed
+      failed_when: false
+
+    - name: Installing Jenkins   
+      homebrew: 
+        name: jenkins
+        state: present
+      when: jenkins_installed.rc != 0
+
+    - name: Starting Jenkins 
+      shell: 
+        brew services start jenkins
+
+    - name: Create Jenkins home directory
+      file:
+        path: /var/lib/jenkins
+        state: directory
+        owner: root
+        group: owner
+        mode: 0755
+      become: true
+
+    - name: Clone a Git repository
+      git:
+        repo: https://gitlab.com/jc1arke/tweet-interpreter.git
+        dest: /var/lib/jenkins/tweet-interpreter
+        force: yes
+      become: true
+
+    - name: Change directory to tweet-interpreter 
+      block:
+        - name: Change directory to tweet-interpreter
+          command: 
+            cmd: cd /var/lib/jenkins/tweet-interpreter
+            chdir: /var/lib/jenkins/tweet-interpreter
+          become: true
+
+    - name: Create Jenkinsfile
+      file:
+        path: /var/lib/jenkins/tweet-interpreter/Jenkinsfile
+        state: touch
+        owner: root
+        group: owner
+        mode: 0755
+      become: true
+
+    - name: Configure Jenkinsfile
+      template:
+        src: Jenkinsfile.j2
+        dest: /var/lib/jenkins/tweet-interpreter/Jenkinsfile
+        owner: root
+        group: owner
+        mode: 0755
+      become: true
+
+    - name: Install Node.js and npm
+      package:
+        name: nodejs
+        state: present
+
+    - name: Run npm install
+      command: npm install
+      args:
+        chdir: /var/lib/jenkins/tweet-interpreter
+      become: true
+      
+    - name: Install python3 
+      homebrew:
+        name: python3
+        state: present
+
+    - name: Install pytest
+      shell:
+        cmd: pip3 install pytest 
+
+    - name: Run unit tests
+      shell: python3 -m pytest
+      args:
+        chdir: /var/lib/jenkins/tweet-interpreter/test/samples/
+      become: true
