@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "start": "node interpret.js",
+    "test": "UNIT_TEST=true istanbul cover ./node_modules/.bin/_mocha -- --timeout 10000 -R mochawesome test/**/*_spec.js"
+  },
+  "dependencies": {
+    "async": "^2.6.1",
+    "events": "^3.0.0",
+    "optimist": "^0.6.1",
+    "winston": "2.4.3"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "istanbul": "^0.4.5",
+    "mocha": "^5.2.0",
+    "mochawesome": "^3.0.2",
+    "sinon": "^6.0.1"
+  }
+}
